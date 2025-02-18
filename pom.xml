@@ -67,8 +67,15 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
- <build>
+<build>
   <plugins>
+    <!-- ✅ Spring Boot Maven Plugin (Creates an Executable JAR) -->
+    <plugin>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-maven-plugin</artifactId>
+    </plugin>
+
+    <!-- ✅ Compiler Plugin (Ensures Java 21 Compatibility) -->
     <plugin>
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-compiler-plugin</artifactId>
@@ -80,13 +87,14 @@
           <path>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
-            <version>2.6.6</version> <!-- Replace with your version -->
+            <version>3.2.2</version> <!-- Updated to match Spring Boot version -->
           </path>
         </annotationProcessorPaths>
       </configuration>
     </plugin>
   </plugins>
 </build>
+
 
 
 </project>
