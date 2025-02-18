@@ -1,11 +1,14 @@
 trigger:
   branches:
     include:
-      - main
+      - main  # Runs the pipeline when changes are pushed to main branch
 
 stages:
 - stage: Build
+  displayName: 'Build Stage'
   jobs:
+  
+  # Backend Build Job
   - job: BuildBackend
     displayName: 'Build Spring Boot Backend'
     pool:
@@ -16,26 +19,28 @@ stages:
 
     - task: UseJavaVersion@1
       inputs:
-        version: '21'
+        version: '21'  # Java version for backend
         architecture: 'x64'
 
-    - name: Build Spring Boot
-      run: |
+    - script: |
         chmod +x mvnw
         ./mvnw clean package -DskipTests
+      displayName: 'Build Spring Boot Application'
 
-    - name: Publish Backend Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: backend-artifact
-        path: target/*.jar
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: 'target/*.jar'
+        artifactName: 'backend-artifact'
 
+  # Frontend Build Job
   - job: BuildFrontend
     displayName: 'Build React Frontend'
     pool:
       vmImage: 'ubuntu-latest'
 
     steps:
+    - checkout: self
+
     - task: NodeTool@0
       inputs:
         versionSpec: '20.x'
@@ -44,39 +49,46 @@ stages:
         cd frontend
         npm install
         npm run build
+      displayName: 'Build React Application'
 
-    - name: Publish Frontend Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: frontend-artifact
-        path: frontend/dist/
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: 'frontend/build/'
+        artifactName: 'frontend-artifact'
 
 - stage: Deploy
+  displayName: 'Deploy Stage'
+  dependsOn: Build
   jobs:
+
+  # Deploy Backend
   - job: DeployBackend
     displayName: 'Deploy Spring Boot to Azure App Service'
     pool:
       vmImage: 'ubuntu-latest'
+
     steps:
     - task: DownloadBuildArtifacts@0
       inputs:
-        artifactName: backend-artifact
+        artifactName: 'backend-artifact'
         downloadPath: $(Build.ArtifactStagingDirectory)
 
     - task: AzureWebApp@1
       inputs:
-        azureSubscription: 'Azure-Connection-EMS'  # Service connection name from DevOps
-        appName: 'ems-backend-app'                 # Your App Service name
+        azureSubscription: 'Azure-Connection-EMS'  # Replace with your service connection name
+        appName: 'ems-backend-app'                # Replace with your Azure App Service name
         package: '$(Build.ArtifactStagingDirectory)/*.jar'
 
+  # Deploy Frontend
   - job: DeployFrontend
     displayName: 'Deploy React to Azure Static Web Apps'
     pool:
       vmImage: 'ubuntu-latest'
+
     steps:
     - task: DownloadBuildArtifacts@0
       inputs:
-        artifactName: frontend-artifact
+        artifactName: 'frontend-artifact'
         downloadPath: $(Build.ArtifactStagingDirectory)
 
     - task: AzureStaticWebApp@0
