@@ -1,0 +1,24 @@
+# This pipeline will only run manually when triggered from Azure DevOps.
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- checkout: self
+
+- task: JavaToolInstaller@0
+  inputs:
+    versionSpec: '21'
+    jdkArchitecture: 'x64'
+    jdkSource: 'PreInstalled'
+
+- script: |
+    chmod +x mvnw
+    ./mvnw clean package -DskipTests
+  displayName: 'Build Spring Boot JAR'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: 'target/*.jar'
+    artifactName: 'backend-jar'
+  displayName: 'Publish JAR Artifact'
