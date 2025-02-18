@@ -6,11 +6,14 @@ stages:
     jobs:
       - job: BuildBackend
         steps:
+          # Install Java if not already installed on the agent
           - task: JavaToolInstaller@0
             inputs:
-              versionSpec: '21'
-              jdkArchitecture: 'x64'
-              jdkSource: 'PreInstalled'
+              versionSpec: '21'       # Desired Java version
+              jdkArchitecture: 'x64'  # Specify 64-bit architecture
+              jdkSource: 'PreInstalled'  # If using preinstalled JDK on the agent
+
+          # Use Maven to build the JAR file
           - script: |
               mvn clean package
             displayName: 'Build JAR file'
