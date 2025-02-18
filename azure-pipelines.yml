@@ -10,8 +10,8 @@ stages:
           - task: JavaToolInstaller@0
             inputs:
               versionSpec: '21'       # Desired Java version
-              jdkArchitecture: 'x64'  # Specify 64-bit architecture
-              jdkSource: 'PreInstalled'  # If using preinstalled JDK on the agent
+              jdkArchitectureOption: 'x64'  # Correct parameter to specify architecture
+              jdkSource: 'PreInstalled'  # Use preinstalled JDK on the agent
 
           # Use Maven to build the JAR file
           - script: |
