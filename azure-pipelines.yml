@@ -17,7 +17,7 @@ stages:
     steps:
     - checkout: self
 
-    - task: UseJavaVersion@1
+    - task: UseJavaVersion@0
       inputs:
         version: '21'  # Java version for backend
         architecture: 'x64'
