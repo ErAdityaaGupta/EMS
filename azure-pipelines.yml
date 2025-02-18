@@ -1,0 +1,86 @@
+trigger:
+  branches:
+    include:
+      - main
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildBackend
+    displayName: 'Build Spring Boot Backend'
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+    - checkout: self
+
+    - task: UseJavaVersion@1
+      inputs:
+        version: '21'
+        architecture: 'x64'
+
+    - name: Build Spring Boot
+      run: |
+        chmod +x mvnw
+        ./mvnw clean package -DskipTests
+
+    - name: Publish Backend Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: backend-artifact
+        path: target/*.jar
+
+  - job: BuildFrontend
+    displayName: 'Build React Frontend'
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '20.x'
+
+    - script: |
+        cd frontend
+        npm install
+        npm run build
+
+    - name: Publish Frontend Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-artifact
+        path: frontend/dist/
+
+- stage: Deploy
+  jobs:
+  - job: DeployBackend
+    displayName: 'Deploy Spring Boot to Azure App Service'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: DownloadBuildArtifacts@0
+      inputs:
+        artifactName: backend-artifact
+        downloadPath: $(Build.ArtifactStagingDirectory)
+
+    - task: AzureWebApp@1
+      inputs:
+        azureSubscription: 'Azure-Connection-EMS'  # Service connection name from DevOps
+        appName: 'ems-backend-app'                 # Your App Service name
+        package: '$(Build.ArtifactStagingDirectory)/*.jar'
+
+  - job: DeployFrontend
+    displayName: 'Deploy React to Azure Static Web Apps'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: DownloadBuildArtifacts@0
+      inputs:
+        artifactName: frontend-artifact
+        downloadPath: $(Build.ArtifactStagingDirectory)
+
+    - task: AzureStaticWebApp@0
+      inputs:
+        azureSubscription: 'Azure-Connection-EMS'  
+        appName: 'ems-frontend'                    
+        package: '$(Build.ArtifactStagingDirectory)'
