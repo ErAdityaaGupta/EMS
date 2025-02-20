@@ -10,5 +10,12 @@ stages:
               export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
               export PATH=$JAVA_HOME/bin:$PATH
               java -version
+            displayName: 'Set up Java 21'
+
+          - script: |
+              mvn clean test
+            displayName: 'Run Unit Tests'
+
+          - script: |
               mvn clean package
             displayName: 'Build JAR file'
