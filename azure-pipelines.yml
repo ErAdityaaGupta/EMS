@@ -30,7 +30,24 @@ stages:
     jobs:
       - job: DeployBackend
         steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download JAR Artifact'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'drop'
+              downloadPath: '/home/Aditya/deploy'
+
           - script: |
               sudo pkill -f 'Employee_Management_System' || true
-              nohup java -jar /home/Aditya/myagent/_work/2/s/target/Employee_Management_System-0.0.1-SNAPSHOT.jar > ~/springboot-app/app.log 2>&1 &
+              nohup java -jar /home/Aditya/deploy/drop/Employee_Management_System-0.0.1-SNAPSHOT.jar > /home/Aditya/deploy/app.log 2>&1 &
             displayName: 'Restart Backend Service'
+
+          - script: |
+              sleep 10
+              curl -I http://localhost:8080 || (echo "Application did not start correctly" && exit 1)
+            displayName: 'Check Application Availability'
+
+          - script: |
+              ps aux | grep 'Employee_Management_System'
+            displayName: 'Verify Application Running'
