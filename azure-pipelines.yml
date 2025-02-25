@@ -30,22 +30,7 @@ stages:
     jobs:
       - job: DeployBackend
         steps:
-          - task: DownloadBuildArtifacts@0
-            displayName: 'Download JAR Artifact'
-            inputs:
-              artifactName: 'drop'
-              downloadPath: '$(Build.ArtifactStagingDirectory)'
-
-          - task: CopyFilesOverSSH@0
-            displayName: 'Copy JAR to Azure VM'
-            inputs:
-              sshEndpoint: 'AzureVM-SSH'
-              sourceFolder: '$(Build.ArtifactStagingDirectory)/drop'
-              targetFolder: '~/springboot-app'
-              cleanTargetFolder: false
-              overwrite: true
-
           - script: |
-              sudo pkill -f 'java -jar' || true
-              nohup java -jar ~/springboot-app/Employee_Management_System-0.0.1-SNAPSHOT.jar > ~/springboot-app/app.log 2>&1 &
+              sudo pkill -f 'Employee_Management_System' || true
+              nohup java -jar /home/Aditya/myagent/_work/2/s/target/Employee_Management_System-0.0.1-SNAPSHOT.jar > ~/springboot-app/app.log 2>&1 &
             displayName: 'Restart Backend Service'
