@@ -26,6 +26,20 @@ stages:
               pathToPublish: 'target/Employee_Management_System-0.0.1-SNAPSHOT.jar'
               artifactName: 'drop'
 
+      - job: BuildFrontend
+        steps:
+          - script: |
+              cd frontend
+              npm install
+              npm run build
+            displayName: 'Build React App'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Frontend Artifact'
+            inputs:
+              pathToPublish: 'frontend/dist'  # If using Vite, otherwise use 'frontend/build' for CRA
+              artifactName: 'frontend'
+
   - stage: Deploy
     jobs:
       - job: DeployBackend
@@ -51,3 +65,17 @@ stages:
           - script: |
               ps aux | grep 'Employee_Management_System'
             displayName: 'Verify Application Running'
+
+      - job: DeployFrontend
+        steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download Frontend Artifact'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'frontend'
+              downloadPath: '/var/www/html'
+
+          - script: |
+              sudo systemctl restart nginx
+            displayName: 'Restart Nginx'
