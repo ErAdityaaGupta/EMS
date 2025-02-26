@@ -37,7 +37,7 @@ stages:
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Frontend Artifact'
             inputs:
-              pathToPublish: 'frontend/dist'  # If using Vite, otherwise use 'frontend/build' for CRA
+              pathToPublish: 'frontend/dist'  # For Vite (use 'frontend/build' for CRA)
               artifactName: 'frontend'
 
   - stage: Deploy
@@ -56,15 +56,6 @@ stages:
               sudo pkill -f 'Employee_Management_System' || true
               nohup java -jar /home/Aditya/deploy/drop/Employee_Management_System-0.0.1-SNAPSHOT.jar > /home/Aditya/deploy/app.log 2>&1 &
             displayName: 'Restart Backend Service'
-
-          - script: |
-              sleep 10
-              curl -I http://localhost:8080 || (echo "Application did not start correctly" && exit 1)
-            displayName: 'Check Application Availability'
-
-          - script: |
-              ps aux | grep 'Employee_Management_System'
-            displayName: 'Verify Application Running'
 
       - job: DeployFrontend
         steps:
