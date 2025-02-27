@@ -71,7 +71,6 @@
 #               sudo systemctl restart nginx
 #             displayName: 'Restart Nginx'
 
-
 pool:
   name: 'SelfHostedPool'
 
@@ -109,6 +108,13 @@ stages:
             inputs:
               artifactName: 'drop'
               downloadPath: '$(Build.ArtifactStagingDirectory)'
+
+          - script: |
+              sudo mkdir -p /home/Aditya/deploy/drop/
+              sudo cp $(Build.ArtifactStagingDirectory)/drop/Employee_Management_System-0.0.1-SNAPSHOT.jar /home/Aditya/deploy/drop/
+              sudo chmod +x /home/Aditya/deploy/drop/Employee_Management_System-0.0.1-SNAPSHOT.jar
+              sudo chown Aditya:Aditya /home/Aditya/deploy/drop/Employee_Management_System-0.0.1-SNAPSHOT.jar
+            displayName: 'Move JAR to Deployment Folder & Set Permissions'
 
           - script: |
               sudo systemctl restart ems
