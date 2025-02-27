@@ -70,8 +70,10 @@
 #           - script: |
 #               sudo systemctl restart nginx
 #             displayName: 'Restart Nginx'
+
+
 pool:
-  name: 'SelfHostedPool'  
+  name: 'SelfHostedPool'
 
 stages:
   - stage: Build
@@ -105,16 +107,14 @@ stages:
           - task: DownloadBuildArtifacts@0
             displayName: 'Download JAR Artifact'
             inputs:
-              buildType: 'current'
-              downloadType: 'single'
               artifactName: 'drop'
-              downloadPath: '/home/Aditya/deploy'
+              downloadPath: '$(Build.ArtifactStagingDirectory)'
 
           - script: |
-              sudo systemctl stop ems || true
-              sudo mv /home/Aditya/deploy/drop/Employee_Management_System-0.0.1-SNAPSHOT.jar /home/Aditya/deploy/Employee_Management_System-0.0.1-SNAPSHOT.jar
-              sudo chmod +x /home/Aditya/deploy/Employee_Management_System-0.0.1-SNAPSHOT.jar
-              sudo systemctl daemon-reload
-              sudo systemctl start ems
-              echo "EMS service restarted successfully."
+              sudo systemctl restart ems
+              echo "Service restarted successfully."
             displayName: 'Restart EMS Service'
+
+          - script: |
+              sudo systemctl status ems --no-pager
+            displayName: 'Check EMS Service Status'
