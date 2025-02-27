@@ -1,3 +1,76 @@
+# pool:
+#   name: 'SelfHostedPool'  
+
+# stages:
+#   - stage: Build
+#     jobs:
+#       - job: BuildBackend
+#         steps:
+#           - script: |
+#               export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+#               export PATH=$JAVA_HOME/bin:$PATH
+#               java -version
+#             displayName: 'Set up Java 21'
+
+#           - script: |
+#               mvn clean test
+#             displayName: 'Run Unit Tests'
+
+#           - script: |
+#               mvn clean package -DskipTests
+#             displayName: 'Build JAR file'
+
+#           - task: PublishBuildArtifacts@1
+#             displayName: 'Publish JAR Artifact'
+#             inputs:
+#               pathToPublish: 'target/Employee_Management_System-0.0.1-SNAPSHOT.jar'
+#               artifactName: 'drop'
+
+#       - job: BuildFrontend
+#         steps:
+#           - script: |
+#               cd frontend
+#               npm install
+#               npm run build
+#             displayName: 'Build React App'
+
+#           - task: PublishBuildArtifacts@1
+#             displayName: 'Publish Frontend Artifact'
+#             inputs:
+#               pathToPublish: 'frontend/dist'  # For Vite (use 'frontend/build' for CRA)
+#               artifactName: 'frontend'
+
+#   - stage: Deploy
+#     jobs:
+#       - job: DeployBackend
+#         steps:
+#           - task: DownloadBuildArtifacts@0
+#             displayName: 'Download JAR Artifact'
+#             inputs:
+#               buildType: 'current'
+#               downloadType: 'single'
+#               artifactName: 'drop'
+#               downloadPath: '/home/Aditya/deploy'
+
+#           - script: |
+#               sudo pkill -f 'Employee_Management_System' || true
+#               nohup java -jar /home/Aditya/deploy/drop/Employee_Management_System-0.0.1-SNAPSHOT.jar > /home/Aditya/deploy/app.log 2>&1 &
+#             displayName: 'Restart Backend Service'
+
+#       - job: DeployFrontend
+#         steps:
+#           - task: DownloadBuildArtifacts@0
+#             displayName: 'Download Frontend Artifact'
+#             inputs:
+#               buildType: 'current'
+#               downloadType: 'single'
+#               artifactName: 'frontend'
+#               downloadPath: '/var/www/html'
+
+#           - script: |
+#               sudo systemctl restart nginx
+#             displayName: 'Restart Nginx'
+
 pool:
   name: 'SelfHostedPool'  
 
@@ -26,20 +99,6 @@ stages:
               pathToPublish: 'target/Employee_Management_System-0.0.1-SNAPSHOT.jar'
               artifactName: 'drop'
 
-      - job: BuildFrontend
-        steps:
-          - script: |
-              cd frontend
-              npm install
-              npm run build
-            displayName: 'Build React App'
-
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish Frontend Artifact'
-            inputs:
-              pathToPublish: 'frontend/dist'  # For Vite (use 'frontend/build' for CRA)
-              artifactName: 'frontend'
-
   - stage: Deploy
     jobs:
       - job: DeployBackend
@@ -56,17 +115,3 @@ stages:
               sudo pkill -f 'Employee_Management_System' || true
               nohup java -jar /home/Aditya/deploy/drop/Employee_Management_System-0.0.1-SNAPSHOT.jar > /home/Aditya/deploy/app.log 2>&1 &
             displayName: 'Restart Backend Service'
-
-      - job: DeployFrontend
-        steps:
-          - task: DownloadBuildArtifacts@0
-            displayName: 'Download Frontend Artifact'
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'frontend'
-              downloadPath: '/var/www/html'
-
-          - script: |
-              sudo systemctl restart nginx
-            displayName: 'Restart Nginx'
