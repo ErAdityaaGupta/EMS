@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK 21
         uses: actions/setup-java@v3
@@ -25,7 +25,7 @@ jobs:
         run: mvn clean install
 
       - name: Archive JAR Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # Updated to v4
         with:
           name: backend-artifact
           path: target/*.jar
@@ -35,23 +35,23 @@ jobs:
     needs: build-backend
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       - name: Install Dependencies
         run: npm install
-        working-directory: frontend  # Change if your frontend is in a different directory
+        working-directory: frontend
 
       - name: Build React App
         run: npm run build
         working-directory: frontend
 
       - name: Archive Frontend Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # Updated to v4
         with:
           name: frontend-artifact
           path: frontend/build
@@ -61,49 +61,42 @@ jobs:
     needs: [build-backend, build-frontend]
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download Backend Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4  # Updated to v4
         with:
           name: backend-artifact
           path: backend
 
       - name: Download Frontend Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4  # Updated to v4
         with:
           name: frontend-artifact
           path: frontend
 
       - name: Deploy to Remote VM
         env:
-          SSH_PRIMARY_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_PRIMARY_KEY: ${{ secrets.SSH_PRIMARY_KEY }}
           REMOTE_USER: "ubuntu"
           REMOTE_HOST: "your-vm-ip"
         run: |
           echo "$SSH_PRIMARY_KEY" > private_key.pem
           chmod 600 private_key.pem
           
-          # Create necessary directories on the remote VM
           ssh -o StrictHostKeyChecking=no -i private_key.pem $REMOTE_USER@$REMOTE_HOST << 'EOF'
             mkdir -p /home/ubuntu/ems/backend
             mkdir -p /home/ubuntu/ems/frontend
           EOF
           
-          # Copy Backend and Frontend files to the remote server
           scp -o StrictHostKeyChecking=no -i private_key.pem -r backend/*.jar $REMOTE_USER@$REMOTE_HOST:/home/ubuntu/ems/backend/
           scp -o StrictHostKeyChecking=no -i private_key.pem -r frontend/* $REMOTE_USER@$REMOTE_HOST:/home/ubuntu/ems/frontend/
 
-          # Restart the backend and frontend
           ssh -o StrictHostKeyChecking=no -i private_key.pem $REMOTE_USER@$REMOTE_HOST << 'EOF'
-            # Stop any running backend instance
             pkill -f 'backend/.*\.jar' || true
-            
-            # Start the backend
             chmod +x /home/ubuntu/ems/backend/*.jar
             nohup java -jar /home/ubuntu/ems/backend/*.jar > /home/ubuntu/ems/backend/app.log 2>&1 &
 
-            # Deploy frontend (if using Nginx)
             sudo rm -rf /var/www/html/*
             sudo cp -r /home/ubuntu/ems/frontend/* /var/www/html/
             sudo systemctl restart nginx || echo "Nginx not installed, skipping..."
