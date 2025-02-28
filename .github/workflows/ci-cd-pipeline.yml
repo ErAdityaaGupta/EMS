@@ -77,16 +77,37 @@ jobs:
 
       - name: Deploy to Remote VM
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_PRIMARY_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           REMOTE_USER: "ubuntu"
           REMOTE_HOST: "your-vm-ip"
         run: |
-          echo "$SSH_PRIVATE_KEY" > private_key.pem
+          echo "$SSH_PRIMARY_KEY" > private_key.pem
           chmod 600 private_key.pem
-          scp -o StrictHostKeyChecking=no -i private_key.pem -r backend frontend $REMOTE_USER@$REMOTE_HOST:/home/ubuntu/
+          
+          # Create necessary directories on the remote VM
           ssh -o StrictHostKeyChecking=no -i private_key.pem $REMOTE_USER@$REMOTE_HOST << 'EOF'
-            nohup java -jar /home/ubuntu/backend/*.jar &
-            sudo rm -rf /var/www/html/*
-            sudo cp -r /home/ubuntu/frontend/* /var/www/html/
-            sudo systemctl restart nginx
+            mkdir -p /home/ubuntu/ems/backend
+            mkdir -p /home/ubuntu/ems/frontend
           EOF
+          
+          # Copy Backend and Frontend files to the remote server
+          scp -o StrictHostKeyChecking=no -i private_key.pem -r backend/*.jar $REMOTE_USER@$REMOTE_HOST:/home/ubuntu/ems/backend/
+          scp -o StrictHostKeyChecking=no -i private_key.pem -r frontend/* $REMOTE_USER@$REMOTE_HOST:/home/ubuntu/ems/frontend/
+
+          # Restart the backend and frontend
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $REMOTE_USER@$REMOTE_HOST << 'EOF'
+            # Stop any running backend instance
+            pkill -f 'backend/.*\.jar' || true
+            
+            # Start the backend
+            chmod +x /home/ubuntu/ems/backend/*.jar
+            nohup java -jar /home/ubuntu/ems/backend/*.jar > /home/ubuntu/ems/backend/app.log 2>&1 &
+
+            # Deploy frontend (if using Nginx)
+            sudo rm -rf /var/www/html/*
+            sudo cp -r /home/ubuntu/ems/frontend/* /var/www/html/
+            sudo systemctl restart nginx || echo "Nginx not installed, skipping..."
+          EOF
+
+      - name: Cleanup
+        run: rm -f private_key.pem
